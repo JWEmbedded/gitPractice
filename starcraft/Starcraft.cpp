@@ -1,9 +1,7 @@
-// 상수 멤버 함수
 #include <iostream>
 
 class Marine {
-  static int total_marine_num;
-  const static int i = 0;
+  static int total_marine_num;  
 
   int hp;                // 마린 체력
   int coord_x, coord_y;  // 마린 위치
