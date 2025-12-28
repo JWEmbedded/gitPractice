@@ -2,92 +2,140 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>내 주식 포트폴리오</title>
+    <title>프리미엄 포트폴리오 관리</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: 'Pretendard', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background-color: #f8f9fa;
-            padding: 20px;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 500px;
-            text-align: center;
-        }
-        h2 { color: #333; }
-        .chart-container {
-            margin-top: 20px;
-            position: relative;
-            height: 300px;
-        }
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        body { font-family: 'Pretendard', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 40px; color: #333; }
+        .container { background: white; padding: 35px; border-radius: 20px; box-shadow: 0 12px 30px rgba(0,0,0,0.08); width: 700px; }
+        
+        h2 { text-align: center; font-weight: 700; margin-bottom: 30px; color: #111; }
+        
+        /* 입력창 스타일 */
+        .input-group { display: flex; gap: 10px; margin-bottom: 35px; background: #f8f9fa; padding: 15px; border-radius: 12px; }
+        input { padding: 12px; border: 1px solid #ddd; border-radius: 8px; flex: 1; font-size: 14px; }
+        input:focus { outline: none; border-color: #1a73e8; }
+        button { cursor: pointer; padding: 12px 24px; background: #1a73e8; color: white; border: none; border-radius: 8px; font-weight: 600; transition: 0.2s; }
+        button:hover { background: #1557b0; }
+
+        /* 메인 레이아웃: 범례와 차트를 가로로 배치 */
+        .content-layout { display: flex; align-items: center; justify-content: space-between; gap: 30px; min-height: 320px; }
+        
+        /* 커스텀 범례 (왼쪽 정렬 핵심) */
+        .custom-legend { flex: 1; display: flex; flex-direction: column; gap: 12px; }
+        .legend-item { display: flex; align-items: center; font-size: 15px; }
+        .color-box { width: 12px; height: 12px; border-radius: 3px; margin-right: 12px; flex-shrink: 0; }
+        .stock-name { flex: 1; text-align: left; font-weight: 500; color: #444; }
+        .stock-percent { width: 60px; text-align: right; font-weight: 700; color: #1a73e8; }
+
+        /* 차트 크기 */
+        .chart-container { flex: 1.2; position: relative; height: 320px; }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h2>📊 자산 포트폴리오</h2>
+        
+        <div class="input-group">
+            <input type="text" id="name" placeholder="종목명을 입력하세요">
+            <input type="number" id="amt" placeholder="투자 금액(원)">
+            <button onclick="add()">추가하기</button>
+        </div>
 
-<div class="container">
-    <h2>📊 내 주식 포트폴리오</h2>
-    <div class="chart-container">
-        <canvas id="myChart"></canvas>
+        <div class="content-layout">
+            <div id="js-legend" class="custom-legend"></div>
+            
+            <div class="chart-container">
+                <canvas id="myChart"></canvas>
+            </div>
+        </div>
     </div>
-</div>
 
 <script>
-    // 1. 여기에 본인의 주식 데이터(종목명, 투자 금액)를 입력하세요.
-    const portfolioData = {
-        "삼성전자": 5000000,
-        "Apple": 3000000,
-        "Tesla": 2000000,
-        "NVIDIA": 4000000,
-        "현대차": 1500000
-    };
+    let portfolio = [];
+    let chart = null;
+    const colors = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796', '#5a5c69', '#af52de'];
 
-    const labels = Object.keys(portfolioData);
-    const dataValues = Object.values(portfolioData);
-    const totalSum = dataValues.reduce((a, b) => a + b, 0);
+    async function loadData() {
+        try {
+            const res = await fetch('/get_data');
+            portfolio = await res.json();
+            updateUI();
+        } catch (e) { console.error("데이터 로드 실패", e); }
+    }
 
-    const ctx = document.getElementById('myChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'pie', // 원형 그래프
-        data: {
-            labels: labels,
-            datasets: [{
-                data: dataValues,
-                backgroundColor: [
-                    '#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#4bc0c0'
-                ],
-                hoverOffset: 10
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                tooltip: {
-                    callbacks: {
-                        // 금액을 퍼센트(%)로 변환하여 표시
-                        label: function(context) {
-                            const value = context.raw;
-                            const percentage = ((value / totalSum) * 100).toFixed(1) + "%";
-                            return `${context.label}: ${value.toLocaleString()}원 (${percentage})`;
+    async function saveData() {
+        await fetch('/save_data', { method: 'POST', body: JSON.stringify(portfolio) });
+    }
+
+    async function add() {
+        const nameIdx = document.getElementById('name');
+        const amtIdx = document.getElementById('amt');
+        if(!nameIdx.value || !amtIdx.value) return;
+        
+        portfolio.push({name: nameIdx.value, amount: parseInt(amtIdx.value)});
+        await saveData();
+        nameIdx.value = ''; amtIdx.value = '';
+        updateUI();
+    }
+
+    function updateUI() {
+        const legendContainer = document.getElementById('js-legend');
+        legendContainer.innerHTML = '';
+        
+        if(chart) chart.destroy();
+        if(portfolio.length === 0) {
+            legendContainer.innerHTML = '<div style="color:#aaa">데이터가 없습니다.</div>';
+            return;
+        }
+
+        const labels = portfolio.map(p => p.name);
+        const values = portfolio.map(p => p.amount);
+        const total = values.reduce((a, b) => a + b, 0);
+
+        // 1. 커스텀 범례 생성 (HTML로 직접 그림)
+        portfolio.forEach((p, i) => {
+            const pct = ((p.amount / total) * 100).toFixed(1);
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            item.innerHTML = `
+                <div class="color-box" style="background:${colors[i % colors.length]}"></div>
+                <span class="stock-name">${p.name}</span>
+                <span class="stock-percent">${pct}%</span>
+            `;
+            legendContainer.appendChild(item);
+        });
+
+        // 2. 차트 생성 (범례는 숨김 처리)
+        const ctx = document.getElementById('myChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { 
+                labels: labels, 
+                datasets: [{ 
+                    data: values, 
+                    backgroundColor: colors,
+                    borderWidth: 0,
+                    hoverOffset: 15
+                }] 
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false }, // 기본 범례는 끕니다.
+                    tooltip: {
+                        callbacks: {
+                            label: (info) => ` ${info.label}: ${info.raw.toLocaleString()}원`
                         }
                     }
-                }
+                },
+                cutout: '70%' // 도넛 두께 조절
             }
-        }
-    });
-</script>
+        });
+    }
 
+    loadData();
+</script>
 </body>
 </html>
