@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 주식 포트폴리오</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Pretendard', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f8f9fa;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h2 { color: #333; }
+        .chart-container {
+            margin-top: 20px;
+            position: relative;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📊 내 주식 포트폴리오</h2>
+    <div class="chart-container">
+        <canvas id="myChart"></canvas>
+    </div>
+</div>
+
+<script>
+    // 1. 여기에 본인의 주식 데이터(종목명, 투자 금액)를 입력하세요.
+    const portfolioData = {
+        "삼성전자": 5000000,
+        "Apple": 3000000,
+        "Tesla": 2000000,
+        "NVIDIA": 4000000,
+        "현대차": 1500000
+    };
+
+    const labels = Object.keys(portfolioData);
+    const dataValues = Object.values(portfolioData);
+    const totalSum = dataValues.reduce((a, b) => a + b, 0);
+
+    const ctx = document.getElementById('myChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'pie', // 원형 그래프
+        data: {
+            labels: labels,
+            datasets: [{
+                data: dataValues,
+                backgroundColor: [
+                    '#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#4bc0c0'
+                ],
+                hoverOffset: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        // 금액을 퍼센트(%)로 변환하여 표시
+                        label: function(context) {
+                            const value = context.raw;
+                            const percentage = ((value / totalSum) * 100).toFixed(1) + "%";
+                            return `${context.label}: ${value.toLocaleString()}원 (${percentage})`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
