@@ -13,7 +13,7 @@ int Date::GetCurrentMonthTotalDays(int year, int month) {
         return month_day[month - 1];
     }
     else if (year % 4 == 0 && year % 100 != 0) {
-        return 29;  // À±³â
+        return 29;  // ï¿½ï¿½ï¿½ï¿½
     }
     else {
         return 28;
@@ -22,16 +22,16 @@ int Date::GetCurrentMonthTotalDays(int year, int month) {
 
 void Date::AddDay(int inc) {
     while (true) {
-        // ÇöÀç ´ÞÀÇ ÃÑ ÀÏ ¼ö
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½
         int current_month_total_days = GetCurrentMonthTotalDays(year_, month_);
 
-        // °°Àº ´Þ ¾È¿¡ µé¾î¿Â´Ù¸é;
+        // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½È¿ï¿½ ï¿½ï¿½ï¿½Â´Ù¸ï¿½;
         if (day_ + inc <= current_month_total_days) {
             day_ += inc;
             return;
         }
         else {
-            // ´ÙÀ½´Þ·Î ³Ñ¾î°¡¾ß ÇÑ´Ù.
+            // ï¿½ï¿½ï¿½ï¿½ï¿½Þ·ï¿½ ï¿½Ñ¾î°¡ï¿½ï¿½ ï¿½Ñ´ï¿½.
             inc -= (current_month_total_days - day_ + 1);
             day_ = 1;
             AddMonth(1);
@@ -48,6 +48,5 @@ void Date::AddMonth(int inc) {
 void Date::AddYear(int inc) { year_ += inc; }
 
 void Date::ShowDate() {
-    std::cout << "¿À´ÃÀº " << year_ << " ³â " << month_ << " ¿ù " << day_
-        << " ÀÏ ÀÔ´Ï´Ù " << std::endl;
+    std::cout<<"Helloword"<<std::endl;
 }
